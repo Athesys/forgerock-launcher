@@ -173,56 +173,47 @@ public class OSGiFrameworkService extends AbstractOSGiFrameworkService {
         transformer = new JsonTransformer() {
             public JsonValue transform(JsonValue value) throws JsonException {
 
-                //Added******
                 if (value == null) {
                     return null;
                 }
                 if (value.isString()) {
-                    return new JsonValue(ConfigurationUtil.substVars(value.asString(), OSGiFrameworkService.this.propertyAccessor), value.getPointer());
+                    return new JsonValue(
+                            ConfigurationUtil.substVars(value.asString(), OSGiFrameworkService.this.propertyAccessor),
+                            value.getPointer());
                 }
                 return value;
-
-                /*if (null != value && value.isString()) {
-                    value.setObject(ConfigurationUtil.substVars(value.asString(), propertyAccessor));
-                }*/
             }
         };
     }
 
-    private static class ExtendedPropertyAccessor implements PropertyAccessor
-    {
+    private static class ExtendedPropertyAccessor implements PropertyAccessor {
         private final Map<String, Object> extendedMap;
         private PropertyAccessor propertyAccessor;
-        
-        public ExtendedPropertyAccessor(Map<String, Object> extendedMap, PropertyAccessor propertyAccessor)
-        {
-        this.extendedMap = extendedMap;
-        this.propertyAccessor = propertyAccessor;
+
+        public ExtendedPropertyAccessor(Map<String, Object> extendedMap, PropertyAccessor propertyAccessor) {
+            this.extendedMap = extendedMap;
+            this.propertyAccessor = propertyAccessor;
         }
-        
-        public <T> T get(String name)
-        {
-        Object value = this.extendedMap.get(name);
-        if (null == value) {
-            value = this.propertyAccessor.get(name);
-        }
-        T result = null;
-        try
-        {
-            result = (T)value;
-        }
-        catch (ClassCastException e) {}
-        return result;
+
+        public <T> T get(String name) {
+            Object value = this.extendedMap.get(name);
+            if (null == value) {
+                value = this.propertyAccessor.get(name);
+            }
+            T result = null;
+            try {
+                result = (T) value;
+            } catch (ClassCastException e) {
+            }
+            return result;
         }
     }
-
 
     public String getInstallDir() {
         return installDir;
     }
 
-    @Option(name = "-i", aliases = { "--install-location" },
-            usage = "install folder (default value is the 'user.dir')")
+    @Option(name = "-i", aliases = { "--install-location" }, usage = "install folder (default value is the 'user.dir')")
     public void setInstallDir(String value) {
         this.installDir = value;
     }
@@ -231,8 +222,7 @@ public class OSGiFrameworkService extends AbstractOSGiFrameworkService {
         return projectDir;
     }
 
-    @Option(name = "-p", aliases = { "--project-location" },
-            usage = "project folder (default value is the 'user.dir')")
+    @Option(name = "-p", aliases = { "--project-location" }, usage = "project folder (default value is the 'user.dir')")
     public void setProjectDir(String value) {
         this.projectDir = value;
     }
@@ -241,8 +231,7 @@ public class OSGiFrameworkService extends AbstractOSGiFrameworkService {
         return workingDir;
     }
 
-    @Option(name = "-w", aliases = { "--working-location" },
-            usage = "working folder (default value is the 'user.dir')")
+    @Option(name = "-w", aliases = { "--working-location" }, usage = "working folder (default value is the 'user.dir')")
     public void setWorkingDir(String value) {
         this.workingDir = value;
     }
@@ -251,8 +240,8 @@ public class OSGiFrameworkService extends AbstractOSGiFrameworkService {
         return configFile;
     }
 
-    @Option(name = "-c", aliases = { "--config" }, required = false,
-            usage = "osgi configuration file", metaVar = "launcher.json")
+    @Option(name = "-c", aliases = {
+            "--config" }, required = false, usage = "osgi configuration file", metaVar = "launcher.json")
     public void setConfigFile(String configFile) {
         this.configFile = configFile;
     }
@@ -270,8 +259,7 @@ public class OSGiFrameworkService extends AbstractOSGiFrameworkService {
         return storageDir;
     }
 
-    @Option(name = "-s", aliases = { "--storage" },
-            usage = "OSGi storage (org.osgi.framework.storage) location")
+    @Option(name = "-s", aliases = { "--storage" }, usage = "OSGi storage (org.osgi.framework.storage) location")
     public void setStorageDir(String storageDir) {
         this.storageDir = storageDir;
     }
@@ -280,8 +268,7 @@ public class OSGiFrameworkService extends AbstractOSGiFrameworkService {
         return bootParameters;
     }
 
-    @Option(name = "-P", usage = "custom parameters to configure the container",
-            metaVar = "attribute=value")
+    @Option(name = "-P", usage = "custom parameters to configure the container", metaVar = "attribute=value")
     public void setBootParameters(Map bootParameters) {
         this.bootParameters = bootParameters;
     }
@@ -365,28 +352,24 @@ public class OSGiFrameworkService extends AbstractOSGiFrameworkService {
                     input = new BufferedReader(new FileReader(_configFile));
                 } else {
                     throw new IllegalArgumentException(
-                            "Boot OSGi configuration file does not exists: "
-                                    + _configFile.getAbsolutePath());
+                            "Boot OSGi configuration file does not exists: " + _configFile.getAbsolutePath());
                 }
             } else {
-                input =
-                        new BufferedReader(new InputStreamReader(Main.class
-                                .getResourceAsStream("/launcher.json")));
+                input = new BufferedReader(new InputStreamReader(Main.class.getResourceAsStream("/launcher.json")));
                 if (null == input) {
-                    throw new IllegalArgumentException(
-                            "Boot OSGi configuration file does not exists on CLASSPATH: "
-                                    + Main.class.getResource("/").toString() + "/launcher.json");
+                    throw new IllegalArgumentException("Boot OSGi configuration file does not exists on CLASSPATH: "
+                            + Main.class.getResource("/").toString() + "/launcher.json");
                 }
             }
 
             //Added******
-            launcherConfiguration = ((JsonValue)JsonValue.json(new JSONParser().parse(input)).as(JsonValueFunctions.deepTransformBy(this.transformer)));
+            launcherConfiguration = ((JsonValue) JsonValue.json(new JSONParser().parse(input))
+                    .as(JsonValueFunctions.deepTransformBy(this.transformer)));
             if (null != input) {
-                try
-                {
-                input.close();
+                try {
+                    input.close();
+                } catch (IOException e) {
                 }
-                catch (IOException e) {}
             }
             loadSystemProperties(launcherConfiguration, projectLocation);
 
@@ -404,33 +387,19 @@ public class OSGiFrameworkService extends AbstractOSGiFrameworkService {
             }
         }
 
-        //Added******
         loadConfigProperties(this.configurationProperties, this.launcherConfiguration, projectLocation);
         this.configurationProperties.putAll(this.bootParameters);
-        
+
         copySystemProperties(this.configurationProperties);
-
-        /*
-        // Load system properties.
-        loadSystemProperties(launcherConfiguration, projectLocation);
-
-        // Read configuration properties.
-        configurationProperties = loadConfigProperties(launcherConfiguration, projectLocation);
-        configurationProperties.putAll(bootParameters);
-
-        // Copy framework properties from the system properties.
-        copySystemProperties(configurationProperties);
-        */
 
         // If there is a passed in bundle cache directory, then
         // that overwrites anything in the config file.
-        configurationProperties.put(Constants.FRAMEWORK_STORAGE, URLDecoder.decode(getFileForPath(
-                null != getStorageDir() ? getStorageDir() : "felix-cache", getWorkingURI())
-                .getAbsolutePath(), "UTF-8"));
+        configurationProperties.put(Constants.FRAMEWORK_STORAGE,
+                URLDecoder.decode(
+                    getFileForPath(determineStorageDir(), getWorkingURI()).getAbsolutePath(), "UTF-8"));
 
         // Append the custom bootProperties
-        for (Map.Entry<String, Object> entry : loadBootProperties(launcherConfiguration,
-                projectLocation).entrySet()) {
+        for (Map.Entry<String, Object> entry : loadBootProperties(launcherConfiguration, projectLocation).entrySet()) {
             if (null != entry.getValue() && !bootParameters.containsKey(entry.getKey())) {
                 bootParameters.put(entry.getKey(), entry.getValue());
             }
@@ -440,8 +409,7 @@ public class OSGiFrameworkService extends AbstractOSGiFrameworkService {
         // cleanly shutdown when the VM exits.
         Object enableHook = getConfigurationProperties().get(SHUTDOWN_HOOK_PROP);
         if ((enableHook == null)
-                || ((enableHook instanceof String) && !((String) enableHook)
-                        .equalsIgnoreCase("false"))) {
+                || ((enableHook instanceof String) && !((String) enableHook).equalsIgnoreCase("false"))) {
             Runtime.getRuntime().addShutdownHook(new Thread("Felix Shutdown Hook") {
                 public void run() {
                     try {
@@ -457,20 +425,15 @@ public class OSGiFrameworkService extends AbstractOSGiFrameworkService {
 
     }
 
-    //Added******
-    private String determineStorageDir()
-    {
+    private String determineStorageDir() {
         String cmdLineStorageDir = getStorageDir();
         Object configPropsStorageDir = this.configurationProperties.get("org.osgi.framework.storage");
         String determinedStorageDir;
-        if (null != cmdLineStorageDir)
-        {
-        determinedStorageDir = cmdLineStorageDir;
-        }
-        else
-        {
+        if (null != cmdLineStorageDir) {
+            determinedStorageDir = cmdLineStorageDir;
+        } else {
             if ((configPropsStorageDir instanceof String)) {
-                determinedStorageDir = (String)configPropsStorageDir;
+                determinedStorageDir = (String) configPropsStorageDir;
             } else {
                 determinedStorageDir = "felix-cache";
             }
@@ -484,8 +447,7 @@ public class OSGiFrameworkService extends AbstractOSGiFrameworkService {
         properties.put(Constants.SERVICE_DESCRIPTION, "Delegated Launcher Boot Configuration");
         properties.put(Constants.SERVICE_PID, OSGiFramework.class.getName());
         properties.put(Constants.SERVICE_RANKING, "16");
-        bundleContext.registerService(Map.class, Collections.unmodifiableMap(bootParameters),
-                properties);
+        bundleContext.registerService(Map.class, Collections.unmodifiableMap(bootParameters), properties);
     }
 
     protected Map<String, String> getConfigurationProperties() {
@@ -499,47 +461,34 @@ public class OSGiFrameworkService extends AbstractOSGiFrameworkService {
         this.configurationProperties = configurationProperties;
     }
 
-    /*public JsonValue getLauncherConfiguration() {
-        if (null == launcherConfiguration) {
-            launcherConfiguration = new JsonValue(new HashMap<String, Object>());
-            launcherConfiguration.getTransformers().add(transformer);
+    public JsonValue getLauncherConfiguration() {
+        if (null == this.launcherConfiguration) {
+            launcherConfiguration = JsonValue.json(JsonValue.object(new Map.Entry[0]));
         }
-        return launcherConfiguration;
-    }*/
-
-    //Added******
-    public JsonValue getLauncherConfiguration()
-    {
-      if (null == this.launcherConfiguration) {
-        launcherConfiguration = JsonValue.json(JsonValue.object(new Map.Entry[0]));
-      }
-      return this.launcherConfiguration;
+        return this.launcherConfiguration;
     }
 
     public void setLauncherConfiguration(JsonValue launcherConfiguration) {
         this.launcherConfiguration = launcherConfiguration;
     }
 
-    protected List<BundleHandler> listBundleHandlers(BundleContext context)
-            throws MalformedURLException {
+    protected List<BundleHandler> listBundleHandlers(BundleContext context) throws MalformedURLException {
         JsonValue bundle = getLauncherConfiguration().get("bundle");
-        BundleHandlerBuilder defaultBuilder =
-                BundleHandlerBuilder.newBuilder(bundle.get("default"));
+        BundleHandlerBuilder defaultBuilder = BundleHandlerBuilder.newBuilder(bundle.get("default"));
 
         List<BundleHandler> result = new ArrayList<BundleHandler>();
 
         URI installDirectory = getInstallURI();
 
         for (JsonValue container : bundle.get("containers")) {
-            BundleHandlerBuilder innerBuilder =
-                    BundleHandlerBuilder.newBuilder(container, defaultBuilder);
+            BundleHandlerBuilder innerBuilder = BundleHandlerBuilder.newBuilder(container, defaultBuilder);
 
             String location = container.get("location").required().asString();
             if (location.toLowerCase().endsWith(".zip")) {
                 File inputFile = getFileForPath(location, installDirectory);
                 for (URL url : ConfigurationUtil.getZipFileListing(inputFile.toURI().toURL(),
-                        container.get("includes").asList(String.class), container.get("excludes")
-                                .asList(String.class))) {
+                        container.get("includes").asList(String.class),
+                        container.get("excludes").asList(String.class))) {
                     result.add(innerBuilder.build(url));
                 }
 
@@ -560,9 +509,8 @@ public class OSGiFrameworkService extends AbstractOSGiFrameworkService {
                 scanner.scan();
 
                 for (String bundleLocation : scanner.getIncludedFiles()) {
-                    BundleHandler newHandler =
-                            innerBuilder.build(scanner.getBasedir().toURI().resolve(
-                                    bundleLocation.replaceAll("\\\\", "/")).toURL());
+                    BundleHandler newHandler = innerBuilder.build(
+                            scanner.getBasedir().toURI().resolve(bundleLocation.replaceAll("\\\\", "/")).toURL());
                     for (BundleHandler handler : result) {
                         if (newHandler.getBundleUrl().equals(handler.getBundleUrl())) {
                             if (newHandler.getActions().equals(handler.getActions())
@@ -570,13 +518,12 @@ public class OSGiFrameworkService extends AbstractOSGiFrameworkService {
                                 // Do not duplicate
                                 newHandler = null;
                                 break;
-                            } 
-                            /*else {*/
-                                StringBuilder sb =
-                                        new StringBuilder("Controversial provisioning between ");
+                            }
+                            else {
+                                StringBuilder sb = new StringBuilder("Controversial provisioning between ");
                                 sb.append(handler).append(" and ").append(newHandler);
                                 throw new IllegalArgumentException(sb.toString());
-                            /*}*/
+                            }
                         }
                     }
                     if (null != newHandler) {
@@ -607,17 +554,15 @@ public class OSGiFrameworkService extends AbstractOSGiFrameworkService {
                 }
             }
         } else {
-            Properties props =
-                    loadPropertyFile(projectDirectory, systemProperties.expect(String.class)
-                            .defaultTo(SYSTEM_PROPERTIES_FILE_VALUE).asString());
+            Properties props = loadPropertyFile(projectDirectory,
+                    systemProperties.expect(String.class).defaultTo(SYSTEM_PROPERTIES_FILE_VALUE).asString());
             if (props == null)
                 return;
             // Perform variable substitution on specified properties.
             for (Enumeration e = props.propertyNames(); e.hasMoreElements();) {
                 String name = (String) e.nextElement();
                 if (!"user.dir".equals(name)) {
-                    Object newValue =
-                            ConfigurationUtil.substVars(props.getProperty(name), propertyAccessor);
+                    Object newValue = ConfigurationUtil.substVars(props.getProperty(name), propertyAccessor);
                     if (newValue instanceof String) {
                         System.setProperty(name, (String) newValue);
                     }
@@ -644,81 +589,54 @@ public class OSGiFrameworkService extends AbstractOSGiFrameworkService {
         if (systemProperties.isMap()) {
             // Substitute all variables
             systemProperties = systemProperties.copy();
-        } 
-        
-        //Added********
-        else
-        {
-        Properties props = loadPropertyFile(projectDirectory, systemProperties.expect(String.class).defaultTo("conf/config.properties").asString());
-        if (props == null) {
-            configurationProperties.clear();
         }
-        systemProperties = (JsonValue)JsonValue.json(props).as(JsonValueFunctions.deepTransformBy(this.transformer));
+        else {
+            Properties props = loadPropertyFile(projectDirectory,
+                    systemProperties.expect(String.class).defaultTo("conf/config.properties").asString());
+            if (props == null) {
+                configurationProperties.clear();
+            }
+            systemProperties = (JsonValue) JsonValue.json(props)
+                    .as(JsonValueFunctions.deepTransformBy(this.transformer));
         }
         Map<String, Object> propertiesMap = systemProperties.asMap();
         PropertyAccessor extendedPropertyAccessor = new ExtendedPropertyAccessor(propertiesMap, this.propertyAccessor);
-        for (Map.Entry<String, Object> entry : propertiesMap.entrySet())
-        {
-        Object value = entry.getValue();
-        if ((value instanceof String))
-        {
-            Object newValue = ConfigurationUtil.substVars((String)value, extendedPropertyAccessor);
-            
-            configurationProperties.put(entry.getKey(), newValue);
-        }
-        }
-    }
-        
-        
-        /*else {
-            Properties props =
-                    loadPropertyFile(projectDirectory, systemProperties.expect(String.class)
-                            .defaultTo(CONFIG_PROPERTIES_FILE_VALUE).asString());
-            if (props == null)
-                return new HashMap<String, String>(0);
-            // Perform variable substitution on specified properties.
-            systemProperties = (new JsonValue(props, null, Arrays.asList(transformer))).copy();
-        }
-        Map<String, String> config = new HashMap<String, String>(systemProperties.size());
-        for (Map.Entry<String, Object> entry : systemProperties.asMap().entrySet()) {
-            if (entry.getValue() instanceof String) {
-                // Excluce the null and non String values
-                config.put(entry.getKey(), (String) entry.getValue());
+        for (Map.Entry<String, Object> entry : propertiesMap.entrySet()) {
+            Object value = entry.getValue();
+            if ((value instanceof String)) {
+                Object newValue = ConfigurationUtil.substVars((String) value, extendedPropertyAccessor);
+
+                configurationProperties.put(entry.getKey(), newValue);
             }
         }
-        return config;
-    }*
-
+    }
+    
     /**
-     * <p>
-     * Loads the boot properties in the configuration property file associated
-     * with the framework installation; these properties are accessible to the
-     * framework and to bundles and are intended for configuration purposes. By
-     * default, the configuration property file is located in the <tt>conf/</tt>
-     * directory and is called " <tt>config.properties</tt>".
-     * </p>
-     * 
-     * @return A <tt>Map<String, Object></tt> instance or <tt>null</tt> if there
-     *         was an error.
-     */
+    * <p>
+    * Loads the boot properties in the configuration property file associated
+    * with the framework installation; these properties are accessible to the
+    * framework and to bundles and are intended for configuration purposes. By
+    * default, the configuration property file is located in the <tt>conf/</tt>
+    * directory and is called " <tt>config.properties</tt>".
+    * </p>
+    * 
+    * @return A <tt>Map<String, Object></tt> instance or <tt>null</tt> if there
+    *         was an error.
+    */
     protected Map<String, Object> loadBootProperties(JsonValue configuration, URI projectDirectory) {
         JsonValue bootProperties = configuration.get(BOOT_PROPERTIES_PROP);
         if (bootProperties.isMap()) {
             // Substitute all variables
             return bootProperties.copy().asMap();
         } else {
-            Properties props =
-                    loadPropertyFile(projectDirectory, bootProperties.expect(String.class)
-                            .defaultTo(BOOT_PROPERTIES_FILE_VALUE).asString());
-            if (props == null)
+            Properties props = loadPropertyFile(projectDirectory,
+                    bootProperties.expect(String.class).defaultTo(BOOT_PROPERTIES_FILE_VALUE).asString());
+            if (props == null) {
                 return new HashMap<String, Object>(0);
+            }
+            
             // Perform variable substitution on specified properties.
-
-            //Added*****
             return ((JsonValue) JsonValue.json(props).as(JsonValueFunctions.deepTransformBy(this.transformer))).asMap();
-
-            /*return (new JsonValue(props, null, Arrays.asList(transformer))).expect(Map.class)
-                    .copy().asMap();*/
         }
     }
 
@@ -729,11 +647,9 @@ public class OSGiFrameworkService extends AbstractOSGiFrameworkService {
         try {
             File pFile = new File(propertyFile);
             if (!pFile.isAbsolute()) {
-                is =
-                        projectDirectory.resolve(propertyFile.toString()).toURL().openConnection()
-                                .getInputStream();
+                is = projectDirectory.resolve(propertyFile.toString()).toURL().openConnection().getInputStream();
             } else {
-                is =  pFile.toURI().toURL().openConnection().getInputStream();
+                is = pFile.toURI().toURL().openConnection().getInputStream();
             }
             props.load(is);
             is.close();
@@ -797,8 +713,7 @@ public class OSGiFrameworkService extends AbstractOSGiFrameworkService {
         File f = new File(path);
         if (f.isAbsolute()) {
             return f;
-        }
-        else {
+        } else {
             return new File(rootDir.resolve(path)).getAbsoluteFile();
         }
     }
