@@ -25,7 +25,10 @@
 package org.forgerock.commons.launcher;
 
 import java.text.SimpleDateFormat;
+import java.io.PrintStream;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 /**
@@ -48,8 +51,6 @@ public class Main {
             // The Framework was started by the Main thread and the Framework
             // was stopped.
             // Some Bundle may keep thread and prevent the System from stopping
-
-            //Added******
             if (server.restart.get()) {
                 System.exit(-1);
             }

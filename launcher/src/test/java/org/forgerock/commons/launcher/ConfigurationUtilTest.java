@@ -58,26 +58,37 @@ public class ConfigurationUtilTest {
                 if (null != is) {
                     try {
                         is.close();
-                    } catch (Exception e) {/* ignore */
+                    } catch (Exception e) {
+                    	/* ignore */
                     }
                 }
             }
         }
-        result =
-                ConfigurationUtil.getZipFileListing(zip, Arrays.asList(new String[] { "**/*jar" }),
-                        null);
-        Assert.assertEquals("Find all jar files", 2, result.size());
-        result =
-                ConfigurationUtil.getZipFileListing(zip, Arrays.asList(new String[] { "*jar" }),
-                        null);
-        Assert.assertEquals("Find jar file in the root", 1, result.size());
-        result =
-                ConfigurationUtil.getZipFileListing(zip, Arrays
-                        .asList(new String[] { "bundle/*jar" }), null);
+
+        // result = ConfigurationUtil.getZipFileListing(zip, Arrays.asList(new String[] { "bundle/*jar" }), null);
+        // Assert.assertEquals("Find jar file in the bundle", 1, result.size());
+        
+        // result = ConfigurationUtil.getZipFileListing(zip, Arrays.asList(new String[] { "*jar" }), null);
+        // Assert.assertEquals("Find jar file in the root", 1, result.size());
+        
+        // result = ConfigurationUtil.getZipFileListing(zip, Arrays.asList(new String[] { "**/*jar" }),null);
+        // Assert.assertEquals("Find all jar files", 2, result.size());              
+
+        // result = ConfigurationUtil.getZipFileListing(zip, Arrays.asList(new String[] { "**/*jar" }), Arrays.asList(new String[] { "bundle/*jar" }));
+        // Assert.assertEquals("Find jar file in the root exclude the bundle", 1, result.size());
+
+
+        result = ConfigurationUtil.getZipFileListing(zip, Arrays.asList(new String[] { "bundle/*jar" }), null);
         Assert.assertEquals("Find jar file in the bundle", 1, result.size());
-        result =
-                ConfigurationUtil.getZipFileListing(zip, Arrays.asList(new String[] { "**/*jar" }),
-                        Arrays.asList(new String[] { "bundle/*jar" }));
+        
+        result = ConfigurationUtil.getZipFileListing(zip, Arrays.asList(new String[] { "*jar" }), Arrays.asList(new String[] { "bundle/*jar" }));
+        Assert.assertEquals("Find jar file in the root", 1, result.size());
+        
+        result = ConfigurationUtil.getZipFileListing(zip, Arrays.asList(new String[] { "*jar" }),null);
+        Assert.assertEquals("Find all jar files", 2, result.size());              
+
+        result = ConfigurationUtil.getZipFileListing(zip, Arrays.asList(new String[] { "*jar" }), Arrays.asList(new String[] { "bundle/*jar" }));
         Assert.assertEquals("Find jar file in the root exclude the bundle", 1, result.size());
+
     }
 }

@@ -46,336 +46,344 @@ import org.codehaus.plexus.util.MatchPatterns;
  */
 public class ConfigurationUtil {
 
-    public static final String DELIM_START_DOLLAR = "${";
+	public static final String DELIM_START_DOLLAR = "${";
 
-    public static final String DELIM_START_AMPERSAND = "&{";
+	public static final String DELIM_START_AMPERSAND = "&{";
 
-    public static final char DELIM_STOP = '}';
+	public static final char DELIM_STOP = '}';
 
-    /**
-    * <p/>
-    * Retrieve a list of filepaths from a given directory within a jar file. If
-    * filtered results are needed, you can supply a |filter| regular expression
-    * which will match each entry.
-    * 
-    * @param location
-    * @param includes
-    *            to filter the results within a regular expression.
-    * @return a list of files within the jar |file|
-    */
-    public static Vector<URL> getJarFileListing(URL location, List<String> includes, List<String> excludes) {
-        files = new Vector();
-        if ((location == null) || (!"jar".equals(location.getProtocol()))) {
-            return files; // Empty.
-        }
-        MatchPatterns includesPatterns = null;
-        MatchPatterns excludesPatterns = null;
+	/**
+	 * <p/>
+	 * Retrieve a list of filepaths from a given directory within a jar file. If
+	 * filtered results are needed, you can supply a |filter| regular expression
+	 * which will match each entry.
+	 * 
+	 * @param location
+	 * @param includes
+	 *            to filter the results within a regular expression.
+	 * @return a list of files within the jar |file|
+	 */
+	public static Vector<URL> getJarFileListing(URL location, List<String> includes, List<String> excludes) {
 
-        if (includes == null) {
-            includesPatterns = MatchPatterns.from(new String[] { "**" });
-        } else {
-            includesPatterns = MatchPatterns.from(includes);
-        }
-        if (excludes == null) {
-            excludesPatterns = MatchPatterns.from();
-        } else {
-            excludesPatterns = MatchPatterns.from(excludes);
-        }
-        JarInputStream inputStream = null;
-        try {
-            // Lets stream the jar file
-            inputStream = new JarInputStream(location.openConnection().getInputStream());
-            JarEntry jarEntry;
+		Vector<URL> files = new Vector<URL>();
 
-            // Iterate the file entries within that jar. Then make sure it
-            // follows the filter given from the user.
-            do {
-                jarEntry = inputStream.getNextJarEntry();
-                if ((jarEntry != null) && (!jarEntry.isDirectory())) {
-                    String fileName = jarEntry.getName();
+		if ((location == null) || (!"jar".equals(location.getProtocol()))) {
+			return files; // Empty.
+		}
+		MatchPatterns includesPatterns = null;
+		MatchPatterns excludesPatterns = null;
 
-                    if ((includesPatterns.matches(fileName, false))
-                            && (!excludesPatterns.matches(fileName, false))) {
-                        files.add(new URL(location, fileName));
-                    }
-                }
-            } while (jarEntry != null);          
+		if (includes == null) {
+			includesPatterns = MatchPatterns.from("**");
+		} else {
+			includesPatterns = MatchPatterns.from(includes);
+		}
+		if (excludes == null) {
+			excludesPatterns = MatchPatterns.from();
+		} else {
+			excludesPatterns = MatchPatterns.from(excludes);
+		}
+		JarInputStream inputStream = null;
+		try {
+			// Lets stream the jar file
+			inputStream = new JarInputStream(location.openConnection().getInputStream());
+			JarEntry jarEntry;
 
-        } catch (IOException ioe) {
-            throw new RuntimeException("Unable to get Jar input stream from '" + location + "'", ioe);
-        } finally {
-            if (null != inputStream) {
-                try {
-                    inputStream.close();
-                } catch (IOException e) {
-                    /* ignore there is nothing to do */
-                }
-            }
-        }
+			// Iterate the file entries within that jar. Then make sure it
+			// follows the filter given from the user.
+			do {
+				jarEntry = inputStream.getNextJarEntry();
+				if ((jarEntry != null) && (!jarEntry.isDirectory())) {
+					String fileName = jarEntry.getName();
 
-        return files;
-    }
+					if ((includesPatterns.matches(fileName, false))
+							&& (!excludesPatterns.matches(fileName, false))) {
+						files.add(new URL(location, fileName));
+					}
+				}
+			} while (jarEntry != null);          
 
-    /**
-     * <p/>
-     * Retrieve a list of filepaths from a given directory within a jar file. If
-     * filtered results are needed, you can supply a |filter| regular expression
-     * which will match each entry.
-     * 
-     * @param location
-     * @param includes
-     *            to filter the results within a regular expression.
-     * @return a list of files within the zip |file|
-     */
-    public static Vector<URL> getZipFileListing(URL location, List<String> includes,
-            List<String> excludes) {
-        Vector<URL> files = new Vector();
-        if (location == null) {
-            return files; // Empty.
-        }
+		} catch (IOException ioe) {
+			throw new RuntimeException("Unable to get Jar input stream from '" + location + "'", ioe);
+		} finally {
+			if (null != inputStream) {
+				try {
+					inputStream.close();
+				} catch (IOException e) {
+					/* ignore there is nothing to do */
+				}
+			}
+		}
 
-        // Wrap the ZIP file location into JAR URL
-        URL base = location;
-        if (!"jar".equals(location.getProtocol())) {
-            try {
-                String zip = location.toString();
-                if (!zip.endsWith("!/")) {
-                    zip = zip + "!/";
-                }
-                base = new URL("jar:" + zip);
-            } catch (MalformedURLException e) {
-                throw new IllegalArgumentException("Protocol can not be wrapped into JAR");
-            }
-        }
-        MatchPatterns includesPatterns = null;
-        MatchPatterns excludesPatterns = null;
-        if (includes == null) {
-            // No includes supplied, so set it to 'matches all'
-            includesPatterns = MatchPatterns.from(new String[] { "**" });
-        } else {
-            includesPatterns = MatchPatterns.from(includes);
-        }
-        if (excludes == null) {
-            excludesPatterns = MatchPatterns.from();
-        } else {
-            excludesPatterns = MatchPatterns.from(excludes);
-        }
-        ZipInputStream inputStream = null;
-        try {
-            // Lets stream the zip file
-            inputStream = new ZipInputStream(location.openConnection().getInputStream());
-            ZipEntry jarEntry;
+		return files;
+	}
 
-            // Iterate the file entries within that zip. Then make sure it
-            // follows the filter given from the user.
-            do {
-                jarEntry = inputStream.getNextEntry();
-                if ((jarEntry != null) && (!jarEntry.isDirectory())) {
-                    String fileName = jarEntry.getName();
+	/**
+	 * <p/>
+	 * Retrieve a list of filepaths from a given directory within a jar file. If
+	 * filtered results are needed, you can supply a |filter| regular expression
+	 * which will match each entry.
+	 * 
+	 * @param location
+	 * @param includes
+	 *            to filter the results within a regular expression.
+	 * @return a list of files within the zip |file|
+	 */
+	public static Vector<URL> getZipFileListing(URL location, List<String> includes,
+			List<String> excludes) {
+		Vector<URL> files = new Vector<URL>();
+		if (location == null) {
+			return files; // Empty.
+		}
 
-                    if ((includesPatterns.matches(fileName, false)) && (!excludesPatterns.matches(fileName, false))) {
-                        files.add(new URL(base, fileName));
-                    }
-                }
-            } while (jarEntry != null);
-            
-        } catch (IOException ioe) {
-            throw new RuntimeException("Unable to get Zip input stream from '" + location + "'", ioe);
-        } finally {
-            if (null != inputStream) {
-                try {
-                    inputStream.close();
-                } catch (IOException e) {
-                    /* ignore there is nothing to do */
-                }
-            }
-        }
+		// Wrap the ZIP file location into JAR URL
+		URL base = location;
+		if (!"jar".equals(location.getProtocol())) {
+			try {
+				String zip = location.toString();
+				if (!zip.endsWith("!/")) {
+					zip = zip + "!/";
+				}
+				base = new URL("jar:" + zip);
+			} catch (MalformedURLException e) {
+				throw new IllegalArgumentException("Protocol can not be wrapped into JAR");
+			}
+		}
 
-        return files;
-    }
+		MatchPatterns includesPatterns = null;
+		MatchPatterns excludesPatterns = null;
 
+		if (includes == null) {
+			// No includes supplied, so set it to 'matches all'
+			includesPatterns = MatchPatterns.from("**");
+		} else {
+			includesPatterns = MatchPatterns.from(includes);
+		}
+		if (excludes == null) {
+			excludesPatterns = MatchPatterns.from();
+		} else {
+			excludesPatterns = MatchPatterns.from(excludes);
+		}
 
-    private static abstract enum Delimiter
-    {
-        DOLLAR {
- 
-            public String getStartString() {
-                return DELIM_START_DOLLAR;
-            }
+		ZipInputStream inputStream = null;
+		try {
+			// Lets stream the zip file
+			inputStream = new ZipInputStream(location.openConnection().getInputStream());
+			
+			
+			ZipEntry jarEntry;
+			
+			int i = 1;
 
-            public char getStartChar() {
-                return "$";
-            }
+			// Iterate the file entries within that zip. Then make sure it
+			// follows the filter given from the user.
+			do {
+				jarEntry = inputStream.getNextEntry();
+				if (jarEntry != null && !jarEntry.isDirectory()) {
+					String fileName = jarEntry.getName();
+			
+					if (includesPatterns.matches(fileName, false) && !excludesPatterns.matches(fileName, false)) {
+						files.add(new URL(base, fileName));
+					}
+				}
+			} while (jarEntry != null);
+		} catch (IOException ioe) {
+			throw new RuntimeException("Unable to get Zip input stream from '" + location + "'",
+					ioe);
+		} finally {
+			if (null != inputStream) {
+				try {
+					inputStream.close();
+				} catch (IOException e) {
+					/* ignore there is nothing to do */
+				}
+			}
+		}
 
-        }, AMPERSAND {
-     
-            public String getStartString() {
-                return DELIM_START_AMPERSAND;
-            }
-
-            public char getStartChar() {
-                return "&";
-            }
+		return files;
+	}
 
 
-        };
+	private static enum Delimiter
+	{
+		DOLLAR {
 
-        private Delimiter() {}
+			public String getStartString() {
+				return DELIM_START_DOLLAR;
+			}
 
-        abstract char getStartChar();
+			public char getStartChar() {
+				return '$';
+			}
 
-        abstract String getStartString();
-    }
+		}, AMPERSAND {
+
+			public String getStartString() {
+				return DELIM_START_AMPERSAND;
+			}
+
+			public char getStartChar() {
+				return '&';
+			}
 
 
-    /**
-     * <p>
-     * This method performs property variable substitution on the specified
-     * value. If the specified value contains the syntax
-     * <tt>&{&lt;prop-name&gt;}</tt>, where <tt>&lt;prop-name&gt;</tt> refers to
-     * either a configuration property or a system property, then the
-     * corresponding property value is substituted for the variable placeholder.
-     * Multiple variable placeholders may exist in the specified value as well
-     * as nested variable placeholders, which are substituted from inner most to
-     * outer most. Configuration properties override system properties.
-     * </p>
-     * 
-     * @param val
-     *            The string on which to perform property substitution.
-     * @param configuration
-     *            Set of configuration properties.
-     * @return The value of the specified string after property substitution.
-     */
-    public static Object substVars(String val, PropertyAccessor configuration) {
-        return substVars(val, configuration, false);
-    }
+		};
 
-    public static Object substVars(String val, PropertyAccessor configuration, boolean doEscape) {
+		private Delimiter() {}
 
-        Object substVars = substVars(val, configuration, Delimiter.AMPERSAND, doEscape);
-        if ((substVars instanceof String)) {
-            substVars = substVars((String) substVars, configuration, Delimiter.DOLLAR, doEscape);
-        }
-        return substVars;
-    }
+		abstract char getStartChar();
 
-    private static Object substVars(String val, PropertyAccessor propertyAccessor, Delimiter delimiter,
-            boolean doEscape) {
+		abstract String getStartString();
+	}
 
-        // Assume we have a value that is something like:
-        // "leading &{foo.&{bar}} middle ${baz} trailing"
 
-        int stopDelim = -1;
-        int startDelim = -1;
-        if (!doEscape) {
-            stopDelim = val.indexOf(DELIM_STOP, stopDelim + 1);
-            // If there is no stopping delimiter, then just return
-            // the value since there is no variable declared.
-            if (stopDelim < 0) {
-                return val;
-            }
-            startDelim = val.indexOf(delimiter.getStartString());
-            // If there is no starting delimiter, then just return
-            // the value since there is no variable declared.
-            if (startDelim < 0) {
-                return val;
-            }
-        }
-        StringBuilder parentBuilder = new StringBuilder(val.length());
-        Stack<StringBuilder> propertyStack = new Stack();
-        propertyStack.push(parentBuilder);
+	/**
+	 * <p>
+	 * This method performs property variable substitution on the specified
+	 * value. If the specified value contains the syntax
+	 * <tt>&{&lt;prop-name&gt;}</tt>, where <tt>&lt;prop-name&gt;</tt> refers to
+	 * either a configuration property or a system property, then the
+	 * corresponding property value is substituted for the variable placeholder.
+	 * Multiple variable placeholders may exist in the specified value as well
+	 * as nested variable placeholders, which are substituted from inner most to
+	 * outer most. Configuration properties override system properties.
+	 * </p>
+	 * 
+	 * @param val
+	 *            The string on which to perform property substitution.
+	 * @param configuration
+	 *            Set of configuration properties.
+	 * @return The value of the specified string after property substitution.
+	 */
+	public static Object substVars(String val, PropertyAccessor configuration) {
+		return substVars(val, configuration, false);
+	}
 
-        for (int index = 0; index < val.length(); index++) {
-            switch (val.charAt(index)) {
-            case '\\':
-                if (doEscape) {
-                    index++;
-                    if (index < val.length()) {
-                        ((StringBuilder) propertyStack.peek()).append(val.charAt(index));
-                    }
-                } else {
-                    ((StringBuilder) propertyStack.peek()).append(val.charAt(index));
-                }
-                break;
-            case '&':
-                if (('{' == val.charAt(index + 1)) && (val.charAt(index) == delimiter.getStartChar())) {
-                    // This is a start of a new property
-                    propertyStack.push(new StringBuilder(val.length()));
-                    index++;
-                } else {
-                    ((StringBuilder) propertyStack.peek()).append(val.charAt(index));
-                }
-                break;
-            case '$':
-                if (('{' == val.charAt(index + 1)) && (val.charAt(index) == delimiter.getStartChar())) {
-                    // This is a start of a new property
-                    propertyStack.push(new StringBuilder(val.length()));
-                    index++;
-                } else {
-                    ((StringBuilder) propertyStack.peek()).append(val.charAt(index));
-                }
-                break;
-            case DELIM_STOP:
-                // End of the actual property
-                if (propertyStack.size() == 1) {
-                    // There is no start delimiter
-                    ((StringBuilder) propertyStack.peek()).append(val.charAt(index));
-                } else {
-                    String variable = ((StringBuilder) propertyStack.pop()).toString();
-                    if ((index == val.length() - 1) && (propertyStack.size() == 1) 
-                            && (parentBuilder.length() == 0)) {
-                        // Replace entire value with an Object
-                        Object substValue =
-                            getSubstituteValue(Object.class, variable, propertyAccessor);
-                        if (null != substValue) {
-                            return substValue;
-                        }
-                        ((StringBuilder) propertyStack.peek()).append(delimiter.getStartString()).append(variable)
-                                .append(DELIM_STOP);
+	public static Object substVars(String val, PropertyAccessor configuration, boolean doEscape) {
 
-                        return ((StringBuilder) propertyStack.peek()).toString();
-                    }
-                    String substValue = (String) getSubstituteValue(String.class, variable, propertyAccessor);
-                    if (null != substValue) {
-                        ((StringBuilder) propertyStack.peek()).append(substValue);
-                    } else {
-                        ((StringBuilder) propertyStack.peek()).append(delimiter.getStartString()).append(variable)
-                                .append(DELIM_STOP));
-                    }
-                }
-                break;
-            default:
-                ((StringBuilder) propertyStack.peek()).append(val.charAt(index));
-            }
-        }
+		Object substVars = substVars(val, configuration, Delimiter.AMPERSAND, doEscape);
+		if ((substVars instanceof String)) {
+			substVars = substVars((String) substVars, configuration, Delimiter.DOLLAR, doEscape);
+		}
+		return substVars;
+	}
 
-        // Close the open &{/${ tags.
-        for (int index = propertyStack.size(); index > 1; index--) {
-            StringBuilder top = (StringBuilder) propertyStack.pop();
-            ((StringBuilder) propertyStack.peek()).append(delimiter.getStartString()).append(top.toString());
-        }
-        return parentBuilder.toString();
-    }
+	private static Object substVars(String val, PropertyAccessor propertyAccessor, Delimiter delimiter,
+			boolean doEscape) {
 
-    private static <T> T getSubstituteValue(Class<T> type, String variable, final PropertyAccessor configuration) {
-        T substValue = null;
-        if (String.class.isAssignableFrom(type)) {
-            // Get the value of the deepest nested variable
-            // placeholder.
-            // Try to configuration properties first.
-            substValue = (configuration != null) ? (T) configuration.get(variable) : null;
-            if (substValue == null) {
-                // Ignore unknown property values.
-                substValue = (T) System.getProperty(variable);
-            }
-        } else {
-            substValue = (configuration != null) ? (T) configuration.get(variable) : null;
-            if (substValue == null) {
-                // Ignore unknown property values.
-                substValue = (T) System.getProperty(variable);
-            }
-        }
-        return substValue;
-    }
+		// Assume we have a value that is something like:
+		// "leading &{foo.&{bar}} middle ${baz} trailing"
+
+		int stopDelim = -1;
+		int startDelim = -1;
+		if (!doEscape) {
+			stopDelim = val.indexOf(DELIM_STOP, stopDelim + 1);
+			// If there is no stopping delimiter, then just return
+			// the value since there is no variable declared.
+			if (stopDelim < 0) {
+				return val;
+			}
+			startDelim = val.indexOf(delimiter.getStartString());
+			// If there is no starting delimiter, then just return
+			// the value since there is no variable declared.
+			if (startDelim < 0) {
+				return val;
+			}
+		}
+		StringBuilder parentBuilder = new StringBuilder(val.length());
+		Stack<StringBuilder> propertyStack = new Stack();
+		propertyStack.push(parentBuilder);
+
+		for (int index = 0; index < val.length(); index++) {
+			switch (val.charAt(index)) {
+			case '\\':
+				if (doEscape) {
+					index++;
+					if (index < val.length()) {
+						propertyStack.peek().append(val.charAt(index));
+					}
+				} else {
+					propertyStack.peek().append(val.charAt(index));
+				}
+				break;
+			case '&':
+				if (('{' == val.charAt(index + 1)) && (val.charAt(index) == delimiter.getStartChar())) {
+					// This is a start of a new property
+					propertyStack.push(new StringBuilder(val.length()));
+					index++;
+				} else {
+					propertyStack.peek().append(val.charAt(index));
+				}
+				break;
+			case '$':
+				if (('{' == val.charAt(index + 1)) && (val.charAt(index) == delimiter.getStartChar())) {
+					// This is a start of a new property
+					propertyStack.push(new StringBuilder(val.length()));
+					index++;
+				} else {
+					propertyStack.peek().append(val.charAt(index));
+				}
+				break;
+			case DELIM_STOP:
+				// End of the actual property
+				if (propertyStack.size() == 1) {
+					// There is no start delimiter
+					propertyStack.peek().append(val.charAt(index));
+				} else {
+					String variable = ((StringBuilder) propertyStack.pop()).toString();
+					if ((index == val.length() - 1) && (propertyStack.size() == 1) 
+							&& (parentBuilder.length() == 0)) {
+						// Replace entire value with an Object
+						Object substValue =
+								getSubstituteValue(Object.class, variable, propertyAccessor);
+						if (null != substValue) {
+							return substValue;
+						}
+						propertyStack.peek().append(delimiter.getStartString()).append(variable)
+						.append(DELIM_STOP);
+
+						return propertyStack.peek().toString();
+					}
+					String substValue = (String) getSubstituteValue(String.class, variable, propertyAccessor);
+					if (null != substValue) {
+						propertyStack.peek().append(substValue);
+					} else {
+						propertyStack.peek().append(delimiter.getStartString()).append(variable).append(DELIM_STOP);
+					}
+				}
+				break;
+			default:
+				propertyStack.peek().append(val.charAt(index));
+			}
+		}
+
+		// Close the open &{/${ tags.
+		for (int index = propertyStack.size(); index > 1; index--) {
+			StringBuilder top = (StringBuilder) propertyStack.pop();
+			propertyStack.peek().append(delimiter.getStartString()).append(top.toString());
+		}
+		return parentBuilder.toString();
+	}
+
+	private static <T> T getSubstituteValue(Class<T> type, String variable, final PropertyAccessor configuration) {
+		T substValue = null;
+		if (String.class.isAssignableFrom(type)) {
+			// Get the value of the deepest nested variable
+			// placeholder.
+			// Try to configuration properties first.
+			substValue = (configuration != null) ? (T) configuration.get(variable) : null;
+			if (substValue == null) {
+				// Ignore unknown property values.
+				substValue = (T) System.getProperty(variable);
+			}
+		} else {
+			substValue = (configuration != null) ? (T) configuration.get(variable) : null;
+			if (substValue == null) {
+				// Ignore unknown property values.
+				substValue = (T) System.getProperty(variable);
+			}
+		}
+		return substValue;
+	}
 
 }

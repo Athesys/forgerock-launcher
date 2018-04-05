@@ -34,35 +34,42 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.net.URLConnection;
 import java.net.URLDecoder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Dictionary;
+import java.util.EnumSet;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 import org.codehaus.plexus.util.DirectoryScanner;
-import org.forgerock.json.fluent.JsonException;
-import org.forgerock.json.fluent.JsonTransformer;
-import org.forgerock.json.fluent.JsonValue;
+import org.forgerock.json.JsonValue;
+import org.forgerock.json.JsonValueException;
+import org.forgerock.json.JsonValueFunctions;
+import org.forgerock.util.Function;
 import org.json.simple.parser.JSONParser;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
+import org.kohsuke.args4j.ExampleMode;
 import org.kohsuke.args4j.Option;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.Constants;
+
+
+
 
 /**
  * An OSGiDaemonBean starts the Embedded OSGi
@@ -128,15 +135,15 @@ public class OSGiFrameworkService extends AbstractOSGiFrameworkService {
     /**
      * Properties to initiate the OSGi Framework
      */
-    private Map configurationProperties = null;
+    private Map configurationProperties = new HashMap();
 
     /**
      * Configuration of this {@link OSGiFrameworkService#init()}.
      */
     private JsonValue launcherConfiguration = null;
 
-    private final JsonTransformer transformer;
-
+    private final Function<JsonValue, JsonValue, JsonValueException> transformer;
+    
     private final PropertyAccessor propertyAccessor;
 
     public OSGiFrameworkService() {
@@ -170,15 +177,15 @@ public class OSGiFrameworkService extends AbstractOSGiFrameworkService {
             }
         };
 
-        transformer = new JsonTransformer() {
-            public JsonValue transform(JsonValue value) throws JsonException {
+        transformer = new Function<JsonValue, JsonValue, JsonValueException>() {
+            public JsonValue apply(JsonValue value) throws JsonValueException {
 
                 if (value == null) {
                     return null;
                 }
                 if (value.isString()) {
                     return new JsonValue(
-                            ConfigurationUtil.substVars(value.asString(), OSGiFrameworkService.this.propertyAccessor),
+                            ConfigurationUtil.substVars(value.asString(), propertyAccessor),
                             value.getPointer());
                 }
                 return value;
@@ -442,12 +449,18 @@ public class OSGiFrameworkService extends AbstractOSGiFrameworkService {
     }
 
     protected void registerServices(BundleContext bundleContext) throws Exception {
-        Dictionary<String, String> properties = new Hashtable<String, String>(4);
+    	
+        Dictionary<String, String> properties2 = new Hashtable(4);
+        properties2.put(Constants.SERVICE_VENDOR, "ForgeRock AS.");
+        properties2.put(Constants.SERVICE_DESCRIPTION, "OSGi Framework Service");
+        properties2.put(Constants.SERVICE_PID, OSGiFramework.class.getName());
+        bundleContext.registerService(OSGiFramework.class, this, properties2);
+    	
+        Dictionary<String, String> properties = new Hashtable(4);
         properties.put(Constants.SERVICE_VENDOR, "ForgeRock AS.");
-        properties.put(Constants.SERVICE_DESCRIPTION, "Delegated Launcher Boot Configuration");
-        properties.put(Constants.SERVICE_PID, OSGiFramework.class.getName());
-        properties.put(Constants.SERVICE_RANKING, "16");
-        bundleContext.registerService(Map.class, Collections.unmodifiableMap(bootParameters), properties);
+        properties.put(Constants.SERVICE_DESCRIPTION, "Boot Configuration");
+        properties.put(Constants.SERVICE_PID, BootConfiguration.class.getName());
+        bundleContext.registerService(Map.class, Collections.unmodifiableMap(this.bootParameters), properties);
     }
 
     protected Map<String, String> getConfigurationProperties() {
@@ -581,10 +594,8 @@ public class OSGiFrameworkService extends AbstractOSGiFrameworkService {
      * <tt>config.properties</tt>".
      * </p>
      * 
-     * @return A <tt>Map<String, Object></tt> instance or <tt>null</tt> if there
-     *         was an error.
      */
-    protected void loadConfigProperties(JsonValue configuration, URI projectDirectory) {
+    protected void loadConfigProperties(Map<String, Object> configurationProperties, JsonValue configuration, URI projectDirectory) {
         JsonValue systemProperties = configuration.get(CONFIG_PROPERTIES_PROP);
         if (systemProperties.isMap()) {
             // Substitute all variables
@@ -662,8 +673,9 @@ public class OSGiFrameworkService extends AbstractOSGiFrameworkService {
             System.err.append("Main: Error loading properties from ").println(propertyFile);
             System.err.println("Main: " + ex);
             try {
-                if (is != null)
+                if (is != null) {
                     is.close();
+                }
             } catch (IOException ex2) {
                 // Nothing we can do.
             }

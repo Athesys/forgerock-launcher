@@ -53,13 +53,15 @@ public abstract class AbstractOSGiFrameworkService implements OSGiFramework {
     private final AtomicReference<Framework> framework = new AtomicReference<Framework>();
 
     private final AtomicBoolean started = new AtomicBoolean(Boolean.FALSE);
+    
+    protected final AtomicBoolean restart = new AtomicBoolean(Boolean.FALSE.booleanValue());
 
     private FrameworkListener frameworkListener = null;
 
     /**
      * @return list of startup bundle handlers.
      */
-    protected abstract List<BundleHandler> listBundleHandlers(BundleContext context)
+    protected abstract List<BundleHandler> listBundleHandlers(BundleContext bundleContext)
             throws MalformedURLException;
 
     /**
@@ -76,7 +78,7 @@ public abstract class AbstractOSGiFrameworkService implements OSGiFramework {
     protected abstract void init() throws Exception;
 
     protected abstract void registerServices(BundleContext bundleContext) throws Exception;
-
+    
     public void start() throws Exception {
         // Create an instance of the framework.
         FrameworkFactory factory = ServiceLoader.load(FrameworkFactory.class).iterator().next();
@@ -95,12 +97,17 @@ public abstract class AbstractOSGiFrameworkService implements OSGiFramework {
 
             Callable<Void> container = new Callable<Void>() {
                 public Void call() throws Exception {
-                    FrameworkEvent event;
+                    FrameworkEvent event = null;
                     do {
+                        Framework fw = framework.get();
                         // Start the framework.
-                        framework.get().start();
+                        fw.start();
                         // Wait for framework to stop to exit the VM.
-                        event = framework.get().waitForStop(0);
+                        event = fw.waitForStop(0L);
+                        if (event.getType() == FrameworkEvent.STOPPED_UPDATE) {
+                            AbstractOSGiFrameworkService.this.restart.set(true);
+                            return null;
+                        }
                     }
                     // If the framework was updated, then restart it.
                     while (event.getType() == FrameworkEvent.STOPPED_UPDATE);

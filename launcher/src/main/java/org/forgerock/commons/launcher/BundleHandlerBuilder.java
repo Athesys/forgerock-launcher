@@ -29,7 +29,7 @@ import java.net.URL;
 import java.util.EnumSet;
 import java.util.StringTokenizer;
 
-import org.forgerock.json.fluent.JsonValue;
+import org.forgerock.json.JsonValue;
 
 /**
  * A BundleHandlerBuilder builds {@link BundleHandler} instances based on the

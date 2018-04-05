@@ -47,7 +47,7 @@ import org.testng.annotations.Test;
  */
 public class OSGiServiceBeanTest {
 
-    private String[] arguments = null;
+    /*private String[] arguments = null;
     private String testName;
     private OSGiFrameworkService service = null;
     private final Semaphore available = new Semaphore(1, true);
@@ -129,5 +129,5 @@ public class OSGiServiceBeanTest {
         if ("test2".equals(testName)) {
             Assert.assertEquals(6, installedBundles.length, "Only 6 bundles should be installed");
         }
-    }
+    }*/
 }
